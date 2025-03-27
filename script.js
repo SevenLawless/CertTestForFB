@@ -580,6 +580,11 @@ document.addEventListener('DOMContentLoaded', () => {
         certificateContainer.appendChild(canvas);
         certificatePreview.classList.remove('hidden');
         
+        // Check if we're in Facebook's browser and add the external browser button
+        if (/FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent)) {
+            addExternalBrowserButton();
+        }
+        
         // Automatically scroll to the certificate preview
         certificatePreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -595,39 +600,70 @@ document.addEventListener('DOMContentLoaded', () => {
             'device': getDeviceType()
         });
         
-        // Log locally to console for debugging
-        console.log('Certificate downloaded at: ' + new Date().toLocaleString());
-        
         const canvas = certificateContainer.querySelector('canvas');
         const fullName = document.getElementById('fullName').value;
-        
-        // Convert canvas to a high-quality PNG (better compatibility)
         const imageData = canvas.toDataURL('image/png', 1.0);
         
-        // Create an image element that we'll use for the download
-        const img = document.createElement('img');
-        img.src = imageData;
-        img.style.display = 'none';
-        document.body.appendChild(img);
+        // Check if we're in Facebook's browser
+        const isFacebookBrowser = /FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent);
         
-        // Create a download link
-        const link = document.createElement('a');
-        link.download = `شهادة تقدير ل ${fullName}`;
-        link.href = imageData;
-        
-        // Use a more direct method that works better across browsers
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        
-        // Append to body, click, and clean up
-        document.body.appendChild(link);
-        link.click();
-        
-        // Clean up after a short delay
-        setTimeout(() => {
-            document.body.removeChild(link);
-            document.body.removeChild(img);
-        }, 100);
+        if (isFacebookBrowser) {
+            // Create a temporary unique URL using a timestamp
+            const timestamp = new Date().getTime();
+            const tempUrl = `https://${window.location.host}/temp-certificate-${timestamp}.html`;
+            
+            // Open a new window with a simple page containing just the image
+            const newTab = window.open('about:blank', '_system');
+            if (newTab) {
+                newTab.document.write(`
+                    <html>
+                    <head>
+                        <title>Certificate for ${fullName}</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                            body { margin: 0; padding: 10px; text-align: center; font-family: Arial, sans-serif; }
+                            img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+                            .instructions { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+                            .download-btn { 
+                                display: inline-block; 
+                                padding: 10px 20px; 
+                                background: #188995; 
+                                color: white; 
+                                text-decoration: none; 
+                                border-radius: 5px;
+                                margin-top: 15px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="instructions">
+                            <h3>Your Certificate is Ready</h3>
+                            <p>Press and hold on the image below and select "Save Image" to download it.</p>
+                        </div>
+                        <img src="${imageData}" alt="Certificate for ${fullName}">
+                        <br>
+                        <a href="${imageData}" download="certificate-${fullName}.png" class="download-btn">Download Certificate</a>
+                    </body>
+                    </html>
+                `);
+                newTab.document.close();
+            } else {
+                // If window.open fails, try a regular link with _blank target
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.target = '_blank';
+                link.download = `certificate-${fullName}.png`;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => document.body.removeChild(link), 100);
+            }
+        } else {
+            // Regular browsers: Use standard download method
+            const link = document.createElement('a');
+            link.download = `شهادة تقدير ل ${fullName}`;
+            link.href = imageData;
+            link.click();
+        }
     });
     
     // Function to detect device type
@@ -640,5 +676,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return 'Mobile';
         }
         return 'Desktop';
+    }
+
+    // Add this function after your getDeviceType function
+    function addExternalBrowserButton() {
+        // Create an "Open in Browser" button next to the download button
+        const openInBrowserBtn = document.createElement('button');
+        openInBrowserBtn.innerHTML = '<i class="fas fa-external-link-alt"></i> Open in Browser';
+        openInBrowserBtn.className = 'secondary-button external-browser-btn';
+        openInBrowserBtn.style.marginLeft = '10px';
+        
+        // Insert it after the download button
+        downloadCertificateBtn.parentNode.insertBefore(openInBrowserBtn, downloadCertificateBtn.nextSibling);
+        
+        // Add click event
+        openInBrowserBtn.addEventListener('click', () => {
+            const canvas = certificateContainer.querySelector('canvas');
+            const fullName = document.getElementById('fullName').value;
+            const imageData = canvas.toDataURL('image/png', 1.0);
+            
+            // Try to open in external browser using various methods
+            window.open(imageData, '_system');
+        });
     }
 });
