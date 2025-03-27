@@ -620,8 +620,62 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add click handler
         openExternalBtn.addEventListener('click', function() {
-            // Open the current page in external browser
-            window.open(window.location.href, '_blank');
+            // Get the current URL
+            const pageUrl = window.location.href;
+            
+            // Try multiple approaches to open in external browser
+            
+            // Method 1: Try using the 'chrome://' scheme for Android
+            if (/Android/i.test(navigator.userAgent)) {
+                // Create and click a hidden link with specific target
+                const chromeIntent = document.createElement('a');
+                chromeIntent.href = 'intent://' + window.location.host + window.location.pathname + 
+                                    '#Intent;scheme=https;package=com.android.chrome;end';
+                chromeIntent.style.display = 'none';
+                document.body.appendChild(chromeIntent);
+                chromeIntent.click();
+                setTimeout(() => document.body.removeChild(chromeIntent), 100);
+                
+                // Fallback to regular link after a short delay
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = pageUrl;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => document.body.removeChild(link), 100);
+                }, 300);
+            } 
+            // Method 2: iOS specific approach
+            else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // Try Safari-specific approach
+                window.location.href = pageUrl;
+                
+                // Fallback to window.open
+                setTimeout(() => {
+                    window.open(pageUrl, '_system');
+                    setTimeout(() => window.open(pageUrl, '_blank'), 100);
+                }, 100);
+            }
+            // Method 3: General fallback for other devices
+            else {
+                // Try several methods in sequence with timeouts
+                window.open(pageUrl, '_system');
+                
+                setTimeout(() => {
+                    window.open(pageUrl, '_blank');
+                }, 100);
+                
+                setTimeout(() => {
+                    const a = document.createElement('a');
+                    a.href = pageUrl;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.click();
+                }, 200);
+            }
         });
         
         // Assemble and add to page
