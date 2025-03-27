@@ -621,61 +621,72 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add click handler
         openExternalBtn.addEventListener('click', function() {
             // Get the current URL
-            const pageUrl = window.location.href;
+            const currentUrl = window.location.href;
             
-            // Try multiple approaches to open in external browser
+            // Create a blob with a simple HTML page that redirects back to the current URL
+            // This creates "special" content that Facebook will prefer to open externally
+            const redirectHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Opening External Browser...</title>
+                    <script>
+                        // Redirect back to the original page
+                        window.location.href = "${currentUrl}";
+                    </script>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            text-align: center;
+                            padding: 40px 20px;
+                        }
+                        .loader {
+                            border: 5px solid #f3f3f3;
+                            border-top: 5px solid #3498db;
+                            border-radius: 50%;
+                            width: 50px;
+                            height: 50px;
+                            animation: spin 1s linear infinite;
+                            margin: 20px auto;
+                        }
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h2>فتح المتصفح الخارجي</h2>
+                    <div class="loader"></div>
+                    <p>جاري التحويل...</p>
+                    <p>إذا لم يتم إعادة توجيهك تلقائيًا، <a href="${currentUrl}">انقر هنا</a></p>
+                </body>
+                </html>
+            `;
             
-            // Method 1: Try using the 'chrome://' scheme for Android
-            if (/Android/i.test(navigator.userAgent)) {
-                // Create and click a hidden link with specific target
-                const chromeIntent = document.createElement('a');
-                chromeIntent.href = 'intent://' + window.location.host + window.location.pathname + 
-                                    '#Intent;scheme=https;package=com.android.chrome;end';
-                chromeIntent.style.display = 'none';
-                document.body.appendChild(chromeIntent);
-                chromeIntent.click();
-                setTimeout(() => document.body.removeChild(chromeIntent), 100);
-                
-                // Fallback to regular link after a short delay
-                setTimeout(() => {
-                    const link = document.createElement('a');
-                    link.href = pageUrl;
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => document.body.removeChild(link), 100);
-                }, 300);
-            } 
-            // Method 2: iOS specific approach
-            else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                // Try Safari-specific approach
-                window.location.href = pageUrl;
-                
-                // Fallback to window.open
-                setTimeout(() => {
-                    window.open(pageUrl, '_system');
-                    setTimeout(() => window.open(pageUrl, '_blank'), 100);
-                }, 100);
-            }
-            // Method 3: General fallback for other devices
-            else {
-                // Try several methods in sequence with timeouts
-                window.open(pageUrl, '_system');
-                
-                setTimeout(() => {
-                    window.open(pageUrl, '_blank');
-                }, 100);
-                
-                setTimeout(() => {
-                    const a = document.createElement('a');
-                    a.href = pageUrl;
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    a.click();
-                }, 200);
-            }
+            // Create a blob from the HTML
+            const blob = new Blob([redirectHtml], {type: 'text/html'});
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Open the blob URL in a new tab with specific attributes
+            // These attributes help trigger Facebook's external browser prompt
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.setAttribute('data-open-externally', 'true');
+            
+            // Add the link to the body and click it
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            }, 1000);
         });
         
         // Assemble and add to page
