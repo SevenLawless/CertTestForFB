@@ -744,4 +744,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return 'Desktop';
     }
+
+    // Detect Facebook browser early
+    const isFacebookBrowser = /FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent);
+    
+    // Add external browser button immediately if using Facebook browser
+    if (isFacebookBrowser) {
+        addExternalBrowserButtonToForm();
+    }
+    
+    // Function to add external browser button to the form area
+    function addExternalBrowserButtonToForm() {
+        // Create a container for the button
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'fb-browser-notice';
+        buttonContainer.style.margin = '20px auto';
+        buttonContainer.style.padding = '15px';
+        buttonContainer.style.backgroundColor = '#f0f8ff';
+        buttonContainer.style.border = '1px solid #4267B2';
+        buttonContainer.style.borderRadius = '8px';
+        buttonContainer.style.textAlign = 'center';
+        
+        // Add notice text
+        const noticeText = document.createElement('p');
+        noticeText.innerText = 'لتجربة أفضل ولتتمكن من تحميل الشهادة بسهولة، يُفضل استخدام متصفح خارجي.';
+        noticeText.style.marginBottom = '15px';
+        noticeText.style.fontSize = '16px';
+        
+        // Create the button
+        const openExternalBtn = document.createElement('button');
+        openExternalBtn.innerText = 'فتح في متصفح خارجي ↗️';
+        openExternalBtn.style.backgroundColor = '#4267B2';
+        openExternalBtn.style.color = 'white';
+        openExternalBtn.style.padding = '12px 20px';
+        openExternalBtn.style.border = 'none';
+        openExternalBtn.style.borderRadius = '5px';
+        openExternalBtn.style.fontSize = '16px';
+        openExternalBtn.style.fontWeight = 'bold';
+        openExternalBtn.style.cursor = 'pointer';
+        
+        // Add click handler
+        openExternalBtn.addEventListener('click', function() {
+            // Open the current page in external browser
+            window.open(window.location.href, '_blank');
+        });
+        
+        // Assemble and add to page
+        buttonContainer.appendChild(noticeText);
+        buttonContainer.appendChild(openExternalBtn);
+        
+        // Add to the page before the form
+        const formContainer = document.querySelector('.form-container');
+        if (formContainer) {
+            formContainer.parentNode.insertBefore(buttonContainer, formContainer);
+        }
+    }
 });
