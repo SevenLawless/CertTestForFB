@@ -580,101 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
         certificateContainer.appendChild(canvas);
         certificatePreview.classList.remove('hidden');
         
-        // Add external browser button if it doesn't exist yet
-        if (!document.getElementById('openInExternalBrowser')) {
-            // Create the button
-            const openExternalBtn = document.createElement('button');
-            openExternalBtn.id = 'openInExternalBrowser';
-            openExternalBtn.innerHTML = '<i class="fas fa-external-link-alt"></i> فتح في متصفح خارجي';
-            openExternalBtn.className = 'external-browser-btn';
-            
-            // Add styles for the button
-            const btnStyle = document.createElement('style');
-            btnStyle.textContent = `
-                .external-browser-btn {
-                    display: block;
-                    margin: 10px auto 0;
-                    padding: 10px 20px;
-                    background-color: #4a6da7;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    transition: background-color 0.3s;
-                }
-                .external-browser-btn:hover {
-                    background-color: #385888;
-                }
-            `;
-            document.head.appendChild(btnStyle);
-            
-            // Add click event handler
-            openExternalBtn.addEventListener('click', function() {
-                // Get the certificate data
-                const certificateCanvas = certificateContainer.querySelector('canvas');
-                const imageData = certificateCanvas.toDataURL('image/png');
-                const fullName = document.getElementById('fullName').value;
-                
-                // Try different methods to open external browser
-                // Method 1: Using location.href with special URL schemes
-                try {
-                    // Create a blob URL for the image
-                    const blob = dataURItoBlob(imageData);
-                    const blobUrl = URL.createObjectURL(blob);
-                    
-                    // Create a simple page with just the certificate and download link
-                    const html = `
-                        <html>
-                        <head>
-                            <title>شهادة ${fullName}</title>
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <style>
-                                body { text-align: center; padding: 20px; font-family: Arial, sans-serif; }
-                                img { max-width: 100%; height: auto; margin-bottom: 20px; }
-                                .download-link { 
-                                    display: inline-block; 
-                                    padding: 10px 20px; 
-                                    background: #188995; 
-                                    color: white; 
-                                    text-decoration: none; 
-                                    border-radius: 5px; 
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <h2>شهادة ${fullName}</h2>
-                            <img src="${imageData}" alt="شهادة">
-                            <br>
-                            <a href="${imageData}" download="شهادة_${fullName}.png" class="download-link">تحميل الشهادة</a>
-                        </body>
-                        </html>
-                    `;
-                    
-                    // Try opening a new tab (which might use external browser)
-                    const newTab = window.open('about:blank', '_system');
-                    if (newTab) {
-                        newTab.document.write(html);
-                        newTab.document.close();
-                    } else {
-                        // Fall back to regular _blank if _system doesn't work
-                        const fallbackTab = window.open('about:blank', '_blank');
-                        if (fallbackTab) {
-                            fallbackTab.document.write(html);
-                            fallbackTab.document.close();
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error opening in external browser:', e);
-                    // Fallback method: Just open current page in _blank which might
-                    // trigger the external browser option on some devices
-                    window.open(window.location.href, '_blank');
-                }
-            });
-            
-            // Add the button after the download button
-            downloadCertificateBtn.insertAdjacentElement('afterend', openExternalBtn);
-        }
+        // Add the external browser button here as well
+        setTimeout(addExternalBrowserButton, 500); // Slight delay to ensure DOM is ready
         
         // Automatically scroll to the certificate preview
         certificatePreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -706,71 +613,81 @@ document.addEventListener('DOMContentLoaded', () => {
             'device': getDeviceType()
         });
         
+        // Also log locally to console for debugging
+        console.log('Certificate downloaded at: ' + new Date().toLocaleString());
+        
         const canvas = certificateContainer.querySelector('canvas');
         const fullName = document.getElementById('fullName').value;
-        const imageData = canvas.toDataURL('image/png', 1.0);
+        const link = document.createElement('a');
+        link.download = `شهادة تقدير ل ${fullName}`;
+        link.href = canvas.toDataURL();
+        link.click();
         
-        // Check if we're in Facebook's browser
-        const isFacebookBrowser = /FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent);
-        
-        if (isFacebookBrowser) {
-            // Create a temporary unique URL using a timestamp
-            const timestamp = new Date().getTime();
-            const tempUrl = `https://${window.location.host}/temp-certificate-${timestamp}.html`;
-            
-            // Open a new window with a simple page containing just the image
-            const newTab = window.open('about:blank', '_system');
-            if (newTab) {
-                newTab.document.write(`
-                    <html>
-                    <head>
-                        <title>Certificate for ${fullName}</title>
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>
-                            body { margin: 0; padding: 10px; text-align: center; font-family: Arial, sans-serif; }
-                            img { max-width: 100%; height: auto; border: 1px solid #ddd; }
-                            .instructions { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px; }
-                            .download-btn { 
-                                display: inline-block; 
-                                padding: 10px 20px; 
-                                background: #188995; 
-                                color: white; 
-                                text-decoration: none; 
-                                border-radius: 5px;
-                                margin-top: 15px;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="instructions">
-                            <h3>Your Certificate is Ready</h3>
-                            <p>Press and hold on the image below and select "Save Image" to download it.</p>
-                        </div>
-                        <img src="${imageData}" alt="Certificate for ${fullName}">
-                        <br>
-                        <a href="${imageData}" download="certificate-${fullName}.png" class="download-btn">Download Certificate</a>
-                    </body>
-                    </html>
-                `);
-                newTab.document.close();
-            } else {
-                // If window.open fails, try a regular link with _blank target
-                const link = document.createElement('a');
-                link.href = imageData;
-                link.target = '_blank';
-                link.download = `certificate-${fullName}.png`;
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => document.body.removeChild(link), 100);
-            }
-        } else {
-            // Regular browsers: Use standard download method
-            const link = document.createElement('a');
-            link.download = `شهادة تقدير ل ${fullName}`;
-            link.href = imageData;
-            link.click();
-        }
+        // Add the external browser button if it doesn't exist yet
+        addExternalBrowserButton();
     });
+    
+    // Function to add the external browser button
+    function addExternalBrowserButton() {
+        // Don't add if it already exists
+        if (document.getElementById('openInExternalBtn')) {
+            return;
+        }
+        
+        // Create button container (to ensure proper placement)
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.textAlign = 'center';
+        buttonContainer.style.marginTop = '15px';
+        
+        // Create the button with very visible styling
+        const openExternalBtn = document.createElement('button');
+        openExternalBtn.id = 'openInExternalBtn';
+        openExternalBtn.innerText = 'فتح في متصفح خارجي ↗️';
+        openExternalBtn.style.backgroundColor = '#4267B2'; // Facebook blue
+        openExternalBtn.style.color = 'white';
+        openExternalBtn.style.padding = '12px 20px';
+        openExternalBtn.style.border = 'none';
+        openExternalBtn.style.borderRadius = '5px';
+        openExternalBtn.style.fontSize = '18px';
+        openExternalBtn.style.fontWeight = 'bold';
+        openExternalBtn.style.marginBottom = '10px';
+        openExternalBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        openExternalBtn.style.cursor = 'pointer';
+        
+        // Add the button to the container
+        buttonContainer.appendChild(openExternalBtn);
+        
+        // Insert the container after certificate preview
+        certificatePreview.appendChild(buttonContainer);
+        
+        // Add click handler for external browser
+        openExternalBtn.addEventListener('click', function() {
+            const canvas = certificateContainer.querySelector('canvas');
+            const imageData = canvas.toDataURL('image/png');
+            const fullName = document.getElementById('fullName').value;
+            
+            // Alert to show the button works
+            alert('جاري الفتح في متصفح خارجي...');
+            
+            // Try different methods to open the browser
+            try {
+                // Method 1: Open current page in _blank (can trigger browser choice on mobile)
+                window.open(window.location.href, '_blank');
+                
+                // Method 2: Try opening with intent schemes (for Android)
+                setTimeout(() => {
+                    window.location.href = 'intent://' + window.location.host + window.location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+                }, 500);
+            } catch (e) {
+                console.error('Error opening browser:', e);
+                // Last resort fallback
+                window.open('https://' + window.location.host, '_system');
+            }
+        });
+        
+        // Add console log to verify the button is added
+        console.log('External browser button added!');
+    }
     
     // Function to detect device type
     function getDeviceType() {
