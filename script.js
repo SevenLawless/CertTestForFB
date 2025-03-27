@@ -634,12 +634,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Create button container (to ensure proper placement)
+        // Create button container
         const buttonContainer = document.createElement('div');
         buttonContainer.style.textAlign = 'center';
         buttonContainer.style.marginTop = '15px';
         
-        // Create the button with very visible styling
+        // Create the button with visible styling
         const openExternalBtn = document.createElement('button');
         openExternalBtn.id = 'openInExternalBtn';
         openExternalBtn.innerText = 'فتح في متصفح خارجي ↗️';
@@ -663,31 +663,75 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add click handler for external browser
         openExternalBtn.addEventListener('click', function() {
             const canvas = certificateContainer.querySelector('canvas');
-            const imageData = canvas.toDataURL('image/png');
+            const imageData = canvas.toDataURL('image/png', 1.0);
             const fullName = document.getElementById('fullName').value;
             
-            // Alert to show the button works
-            alert('جاري الفتح في متصفح خارجي...');
+            // Create a simple HTML page with just the certificate
+            const certificateHtml = `
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>شهادة ${fullName}</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            background-color: #f0f2f5;
+                            margin: 0;
+                            padding: 20px;
+                            text-align: center;
+                        }
+                        .certificate-container {
+                            max-width: 100%;
+                            margin: 0 auto;
+                            background: white;
+                            padding: 15px;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        }
+                        h1 {
+                            color: #188995;
+                            margin-bottom: 20px;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                            border: 1px solid #eee;
+                        }
+                        .download-button {
+                            background-color: #188995;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            margin-top: 20px;
+                            text-decoration: none;
+                            display: inline-block;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate-container">
+                        <h1>شهادة ${fullName}</h1>
+                        <img src="${imageData}" alt="شهادة تقدير">
+                        <br>
+                        <a href="${imageData}" download="شهادة_${fullName}.png" class="download-button">تحميل الشهادة</a>
+                    </div>
+                </body>
+                </html>
+            `;
             
-            // Try different methods to open the browser
-            try {
-                // Method 1: Open current page in _blank (can trigger browser choice on mobile)
-                window.open(window.location.href, '_blank');
-                
-                // Method 2: Try opening with intent schemes (for Android)
-                setTimeout(() => {
-                    window.location.href = 'intent://' + window.location.host + window.location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
-                }, 500);
-            } catch (e) {
-                console.error('Error opening browser:', e);
-                // Last resort fallback
-                window.open('https://' + window.location.host, '_system');
-            }
+            // Create a blob from the HTML
+            const blob = new Blob([certificateHtml], {type: 'text/html'});
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Open the blob URL in a new tab/window (will trigger external browser option)
+            window.open(blobUrl, '_blank');
         });
-        
-        // Add console log to verify the button is added
-        console.log('External browser button added!');
-    }
+    });
     
     // Function to detect device type
     function getDeviceType() {
