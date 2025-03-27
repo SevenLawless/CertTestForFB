@@ -595,174 +595,39 @@ document.addEventListener('DOMContentLoaded', () => {
             'device': getDeviceType()
         });
         
-        // Also log locally to console for debugging
+        // Log locally to console for debugging
         console.log('Certificate downloaded at: ' + new Date().toLocaleString());
         
         const canvas = certificateContainer.querySelector('canvas');
         const fullName = document.getElementById('fullName').value;
-
-        // Check if we're in Facebook's browser
-        const isFacebookBrowser = /FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent);
         
-        if (isFacebookBrowser) {
-            // For Facebook browser: Show fallback instructions
-            const dataUrl = canvas.toDataURL();
-            
-            // Check current language
-            const isEnglish = htmlRoot.getAttribute('dir') === 'ltr';
-            
-            // Create a modal with instructions
-            const fbModal = document.createElement('div');
-            fbModal.className = 'fb-browser-modal';
-            
-            if (isEnglish) {
-                fbModal.innerHTML = `
-                    <div class="fb-browser-content">
-                        <h3>Download Certificate</h3>
-                        <p>It appears you're using Facebook's browser which may not support direct downloads.</p>
-                        <p>Follow these steps to download your certificate:</p>
-                        <ol>
-                            <li>Press and hold on the image below</li>
-                            <li>Select "Save Image" from the menu</li>
-                        </ol>
-                        <div class="certificate-image-container">
-                            <img src="${dataUrl}" alt="Certificate for ${fullName}" />
-                        </div>
-                        <div class="fb-modal-actions">
-                            <button id="fbCloseModal" class="secondary-button">
-                                <i class="fas fa-times"></i> Close
-                            </button>
-                            <a href="${dataUrl}" download="Certificate for ${fullName}" target="_blank" class="cta-button">
-                                <i class="fas fa-download"></i> Try Direct Download
-                            </a>
-                        </div>
-                    </div>
-                `;
-            } else {
-                fbModal.innerHTML = `
-                    <div class="fb-browser-content">
-                        <h3>تنزيل الشهادة</h3>
-                        <p>يبدو أنك تستخدم متصفح فيسبوك الذي قد لا يدعم التنزيل المباشر.</p>
-                        <p>اتبع هذه الخطوات لتنزيل الشهادة:</p>
-                        <ol>
-                            <li>اضغط مطولاً على الصورة أدناه</li>
-                            <li>اختر "حفظ الصورة" من القائمة</li>
-                        </ol>
-                        <div class="certificate-image-container">
-                            <img src="${dataUrl}" alt="شهادة ${fullName}" />
-                        </div>
-                        <div class="fb-modal-actions">
-                            <button id="fbCloseModal" class="secondary-button">
-                                <i class="fas fa-times"></i> إغلاق
-                            </button>
-                            <a href="${dataUrl}" download="شهادة تقدير ل ${fullName}" target="_blank" class="cta-button">
-                                <i class="fas fa-download"></i> محاولة التنزيل المباشر
-                            </a>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Add styles for the Facebook modal
-            const fbModalStyle = document.createElement('style');
-            fbModalStyle.textContent = `
-                .fb-browser-modal {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.8);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 1000;
-                }
-                .fb-browser-content {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    max-width: 90%;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                }
-                .certificate-image-container {
-                    margin: 15px 0;
-                    text-align: center;
-                }
-                .certificate-image-container img {
-                    max-width: 100%;
-                    height: auto;
-                    border: 1px solid #ddd;
-                }
-                .fb-modal-actions {
-                    display: flex;
-                    gap: 10px;
-                    justify-content: center;
-                    margin-top: 15px;
-                }
-            `;
-            
-            document.head.appendChild(fbModalStyle);
-            document.body.appendChild(fbModal);
-            
-            // Add close functionality
-            document.getElementById('fbCloseModal').addEventListener('click', () => {
-                fbModal.remove();
-                fbModalStyle.remove();
-            });
-            
-            // Add a tooltip message when user taps on the image
-            setTimeout(() => {
-                const certificateImg = document.querySelector('.certificate-image-container img');
-                if (certificateImg) {
-                    certificateImg.addEventListener('click', () => {
-                        const tooltip = document.createElement('div');
-                        tooltip.className = 'fb-tooltip';
-                        
-                        if (isEnglish) {
-                            tooltip.textContent = 'Press and hold to save image';
-                        } else {
-                            tooltip.textContent = 'اضغط مطولاً لحفظ الصورة';
-                        }
-                        
-                        document.querySelector('.certificate-image-container').appendChild(tooltip);
-                        
-                        setTimeout(() => {
-                            tooltip.style.opacity = '0';
-                            setTimeout(() => tooltip.remove(), 500);
-                        }, 2000);
-                    });
-                }
-            }, 1000);
-            
-            // Add styles for the tooltip
-            fbModalStyle.textContent += `
-                .fb-tooltip {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(0, 0, 0, 0.7);
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 5px;
-                    font-size: 14px;
-                    opacity: 1;
-                    transition: opacity 0.5s;
-                    z-index: 1001;
-                }
-                .certificate-image-container {
-                    position: relative;
-                }
-            `;
-        } else {
-            // Regular browsers: Use standard download method
-            const link = document.createElement('a');
-            link.download = `شهادة تقدير ل ${fullName}`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
+        // Convert canvas to a high-quality PNG (better compatibility)
+        const imageData = canvas.toDataURL('image/png', 1.0);
+        
+        // Create an image element that we'll use for the download
+        const img = document.createElement('img');
+        img.src = imageData;
+        img.style.display = 'none';
+        document.body.appendChild(img);
+        
+        // Create a download link
+        const link = document.createElement('a');
+        link.download = `شهادة تقدير ل ${fullName}`;
+        link.href = imageData;
+        
+        // Use a more direct method that works better across browsers
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        
+        // Append to body, click, and clean up
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up after a short delay
+        setTimeout(() => {
+            document.body.removeChild(link);
+            document.body.removeChild(img);
+        }, 100);
     });
     
     // Function to detect device type
