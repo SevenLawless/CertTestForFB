@@ -575,181 +575,16 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = templateSrc || 'https://via.placeholder.com/1600x2000.png?text=Certificate+Template';
     }
 
-    function displayCertificate(canvas) {
-        certificateContainer.innerHTML = '';
-        certificateContainer.appendChild(canvas);
-        certificatePreview.classList.remove('hidden');
-        
-        // Add the external browser button here as well
-        setTimeout(addExternalBrowserButton, 500); // Slight delay to ensure DOM is ready
-        
-        // Automatically scroll to the certificate preview
-        certificatePreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Function to detect mobile devices
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(navigator.userAgent);
     }
     
-    // Helper function to convert Data URI to Blob
-    function dataURItoBlob(dataURI) {
-        const byteString = atob(dataURI.split(',')[1]);
-        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-        
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        
-        for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-        
-        return new Blob([ab], { type: mimeString });
-    }
-
-    // Download Certificate
-    downloadCertificateBtn.addEventListener('click', () => {
-        // Track download event with Google Analytics
-        gtag('event', 'download_certificate', {
-            'event_category': 'engagement',
-            'event_label': 'Certificate Download',
-            'value': 1,
-            'non_interaction': false,
-            'device': getDeviceType()
-        });
-        
-        // Also log locally to console for debugging
-        console.log('Certificate downloaded at: ' + new Date().toLocaleString());
-        
-        const canvas = certificateContainer.querySelector('canvas');
-        const fullName = document.getElementById('fullName').value;
-        const link = document.createElement('a');
-        link.download = `شهادة تقدير ل ${fullName}`;
-        link.href = canvas.toDataURL();
-        link.click();
-        
-        // Add the external browser button if it doesn't exist yet
-        addExternalBrowserButton();
-    });
+    // Combined check for Facebook browser AND mobile device
+    const isFacebookMobile = /FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent) && isMobileDevice();
     
-    // Function to add the external browser button
-    function addExternalBrowserButton() {
-        // Don't add if it already exists
-        if (document.getElementById('openInExternalBtn')) {
-            return;
-        }
-        
-        // Create button container
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.textAlign = 'center';
-        buttonContainer.style.marginTop = '15px';
-        
-        // Create the button with visible styling
-        const openExternalBtn = document.createElement('button');
-        openExternalBtn.id = 'openInExternalBtn';
-        openExternalBtn.innerText = 'فتح في متصفح خارجي ↗️';
-        openExternalBtn.style.backgroundColor = '#4267B2'; // Facebook blue
-        openExternalBtn.style.color = 'white';
-        openExternalBtn.style.padding = '12px 20px';
-        openExternalBtn.style.border = 'none';
-        openExternalBtn.style.borderRadius = '5px';
-        openExternalBtn.style.fontSize = '18px';
-        openExternalBtn.style.fontWeight = 'bold';
-        openExternalBtn.style.marginBottom = '10px';
-        openExternalBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-        openExternalBtn.style.cursor = 'pointer';
-        
-        // Add the button to the container
-        buttonContainer.appendChild(openExternalBtn);
-        
-        // Insert the container after certificate preview
-        certificatePreview.appendChild(buttonContainer);
-        
-        // Add click handler for external browser
-        openExternalBtn.addEventListener('click', function() {
-            const canvas = certificateContainer.querySelector('canvas');
-            const imageData = canvas.toDataURL('image/png', 1.0);
-            const fullName = document.getElementById('fullName').value;
-            
-            // Create a simple HTML page with just the certificate
-            const certificateHtml = `
-                <!DOCTYPE html>
-                <html dir="rtl" lang="ar">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>شهادة ${fullName}</title>
-                    <style>
-                        body {
-                            font-family: 'Segoe UI', Arial, sans-serif;
-                            background-color: #f0f2f5;
-                            margin: 0;
-                            padding: 20px;
-                            text-align: center;
-                        }
-                        .certificate-container {
-                            max-width: 100%;
-                            margin: 0 auto;
-                            background: white;
-                            padding: 15px;
-                            border-radius: 8px;
-                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                        }
-                        h1 {
-                            color: #188995;
-                            margin-bottom: 20px;
-                        }
-                        img {
-                            max-width: 100%;
-                            height: auto;
-                            border: 1px solid #eee;
-                        }
-                        .download-button {
-                            background-color: #188995;
-                            color: white;
-                            border: none;
-                            padding: 12px 24px;
-                            font-size: 16px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            margin-top: 20px;
-                            text-decoration: none;
-                            display: inline-block;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="certificate-container">
-                        <h1>شهادة ${fullName}</h1>
-                        <img src="${imageData}" alt="شهادة تقدير">
-                        <br>
-                        <a href="${imageData}" download="شهادة_${fullName}.png" class="download-button">تحميل الشهادة</a>
-                    </div>
-                </body>
-                </html>
-            `;
-            
-            // Create a blob from the HTML
-            const blob = new Blob([certificateHtml], {type: 'text/html'});
-            const blobUrl = URL.createObjectURL(blob);
-            
-            // Open the blob URL in a new tab/window (will trigger external browser option)
-            window.open(blobUrl, '_blank');
-        });
-    });
-    
-    // Function to detect device type
-    function getDeviceType() {
-        const userAgent = navigator.userAgent;
-        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
-            return 'Tablet';
-        }
-        if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
-            return 'Mobile';
-        }
-        return 'Desktop';
-    }
-
-    // Detect Facebook browser early
-    const isFacebookBrowser = /FBAN|FBAV|FBV|FBDV|FB_IAB|Instagram|FB4A/.test(navigator.userAgent);
-    
-    // Add external browser button immediately if using Facebook browser
-    if (isFacebookBrowser) {
+    // Add external browser button immediately if using Facebook browser on mobile
+    if (isFacebookMobile) {
         addExternalBrowserButtonToForm();
     }
     
@@ -798,5 +633,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (formContainer) {
             formContainer.parentNode.insertBefore(buttonContainer, formContainer);
         }
+    }
+
+    // Also modify the certificate display function to only show the button for mobile Facebook users
+    function displayCertificate(canvas) {
+        certificateContainer.innerHTML = '';
+        certificateContainer.appendChild(canvas);
+        certificatePreview.classList.remove('hidden');
+        
+        // Only add external browser button if on mobile Facebook
+        if (isFacebookMobile) {
+            setTimeout(addExternalBrowserButton, 500);
+        }
+        
+        // Automatically scroll to the certificate preview
+        certificatePreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // And update the download handler to only show the button for mobile Facebook users
+    downloadCertificateBtn.addEventListener('click', () => {
+        // Track download event with Google Analytics
+        gtag('event', 'download_certificate', {
+            'event_category': 'engagement',
+            'event_label': 'Certificate Download',
+            'value': 1,
+            'non_interaction': false,
+            'device': getDeviceType()
+        });
+        
+        // Also log locally to console for debugging
+        console.log('Certificate downloaded at: ' + new Date().toLocaleString());
+        
+        const canvas = certificateContainer.querySelector('canvas');
+        const fullName = document.getElementById('fullName').value;
+        
+        // If mobile Facebook browser, show the button
+        if (isFacebookMobile) {
+            addExternalBrowserButton();
+        }
+        
+        // Otherwise just use the normal download
+        const link = document.createElement('a');
+        link.download = `شهادة تقدير ل ${fullName}`;
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+
+    // Function to detect device type
+    function getDeviceType() {
+        const userAgent = navigator.userAgent;
+        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
+            return 'Tablet';
+        }
+        if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
+            return 'Mobile';
+        }
+        return 'Desktop';
     }
 });
